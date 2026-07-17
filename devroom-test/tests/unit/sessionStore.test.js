@@ -55,7 +55,7 @@ describe('sessionStore', () => {
   // Test 7: After addParticipant, getActiveNames contains the participant name
   it('getActiveNames contains the name after addParticipant', () => {
     const { sessionId } = store.createSession('ParticipantTest');
-    store.addParticipant(sessionId, 'p1', 'SilentPanda1', 'tok1');
+    store.addParticipant(sessionId, 'p1', { name: 'SilentPanda1', avatarSeed: '1', token: 'tok1', role: 'participant' });
     const names = store.getActiveNames(sessionId);
     expect(names.has('SilentPanda1')).toBe(true);
   });
@@ -63,8 +63,8 @@ describe('sessionStore', () => {
   // Test 8: Two addParticipant calls with different names both appear in getActiveNames
   it('two addParticipant calls with different names both appear in getActiveNames', () => {
     const { sessionId } = store.createSession('MultiParticipant');
-    store.addParticipant(sessionId, 'p1', 'SilentPanda1', 'tok1');
-    store.addParticipant(sessionId, 'p2', 'CryptoFox2', 'tok2');
+    store.addParticipant(sessionId, 'p1', { name: 'SilentPanda1', avatarSeed: '1', token: 'tok1', role: 'participant' });
+    store.addParticipant(sessionId, 'p2', { name: 'CryptoFox2', avatarSeed: '2', token: 'tok2', role: 'participant' });
     const names = store.getActiveNames(sessionId);
     expect(names.has('SilentPanda1')).toBe(true);
     expect(names.has('CryptoFox2')).toBe(true);

@@ -50,13 +50,23 @@ function getSessionByCode(code) {
 }
 
 /**
- * addParticipant(sessionId, participantId, name, token)
+ * addParticipant(sessionId, participantId, { name, avatarSeed, token, role })
  */
-function addParticipant(sessionId, participantId, name, token) {
+function addParticipant(sessionId, participantId, { name, avatarSeed, token, role }) {
   const session = sessions.get(sessionId);
   if (!session) throw new Error(`Session ${sessionId} not found`);
-  session.participants.set(participantId, { participantId, name, token });
+  session.participants.set(participantId, { participantId, name, avatarSeed, token, role });
   session.activeNames.add(name);
+}
+
+/**
+ * getParticipant(sessionId, participantId)
+ * Returns the participant object or undefined.
+ */
+function getParticipant(sessionId, participantId) {
+  const session = sessions.get(sessionId);
+  if (!session) return undefined;
+  return session.participants.get(participantId);
 }
 
 /**
@@ -81,6 +91,7 @@ module.exports = {
   createSession,
   getSessionByCode,
   addParticipant,
+  getParticipant,
   getActiveNames,
   hasSession
 };

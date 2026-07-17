@@ -50,14 +50,22 @@ router.post('/:code/join', (req, res) => {
   const { name, seed } = nameResult;
   const participantId = uuidv4();
   const token = uuidv4();
+  const avatarSeed = String(seed);
 
-  store.addParticipant(session.sessionId, participantId, name, token);
+  // Determine role: instructor if valid instructor token provided
+  const { role: roleParam, token: queryToken } = req.query;
+  const role = (roleParam === 'instructor' && queryToken === session.instructorToken)
+    ? 'instructor'
+    : 'participant';
+
+  store.addParticipant(session.sessionId, participantId, { name, avatarSeed, token, role });
 
   return res.status(200).json({
     participantId,
     name,
-    avatarSeed: String(seed),
-    token
+    avatarSeed,
+    token,
+    role
   });
 });
 
