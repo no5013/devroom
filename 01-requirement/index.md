@@ -16,7 +16,7 @@
 | US-07 | [Create Poll via `/poll` Chat Command](us-07-poll-chat-command.md) | [x] Done |
 | US-08 | [Poll Renders as Inline Chat Bubble](us-08-poll-chat-bubble.md) | [x] Done |
 | US-09 | [Vote and See Live Results Inside the Chat Bubble](us-09-vote-in-chat.md) | [x] Done |
-| US-10 | [Close Poll via Chat Command or In-Card Button](us-10-close-poll-via-chat.md) | [ ] Not done |
+| US-10 | [Close Poll via Chat Command or In-Card Button](us-10-close-poll-via-chat.md) | [x] Done |
 
 ## Legend
 

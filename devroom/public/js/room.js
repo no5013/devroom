@@ -408,6 +408,14 @@
     });
 
     card.appendChild(optionsEl);
+
+    if (frozen) {
+      var closedLabel = document.createElement('div');
+      closedLabel.className = 'poll-closed-label';
+      closedLabel.textContent = 'Poll closed';
+      card.appendChild(closedLabel);
+    }
+
     return card;
   }
 
@@ -484,30 +492,48 @@
     pollClosed = true;
     currentPollId = null;
 
-    // Freeze the active card and move it into #messages
     var cardArea = document.getElementById('poll-card-area');
     var activeCard = cardArea.querySelector('.poll-card');
+
     if (activeCard && window._currentPollOptions) {
-      var frozen = renderPollCard(
-        { id: ev && ev.pollId, question: activeCard.querySelector('.poll-card-question').textContent, options: window._currentPollOptions },
-        true
-      );
-      // Copy final vote totals into the frozen card
-      activeCard.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
+      var finalResults = (ev && ev.finalResults) || aggregateTotals || {};
+      var totalVotes = Object.values(finalResults).reduce(function(s, v) { return s + v; }, 0);
+
+      // Build frozen card using stored options + final results from server
+      var frozenPoll = {
+        id: ev && ev.pollId,
+        question: activeCard.querySelector('.poll-card-question')
+                    ? activeCard.querySelector('.poll-card-question').textContent
+                    : '',
+        options: window._currentPollOptions
+      };
+      var frozen = renderPollCard(frozenPoll, true);
+
+      // Apply final vote totals from server payload
+      frozen.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
         var optId = btn.dataset.optionId;
-        var frozenBtn = frozen.querySelector('.poll-vote-btn[data-option-id="' + optId + '"]');
-        if (frozenBtn) {
-          var tEl = btn.querySelector('[data-role="total"]');
-          var frozenT = frozenBtn.querySelector('[data-role="total"]');
-          if (tEl && frozenT) frozenT.textContent = tEl.textContent;
+        var count = finalResults[optId] || 0;
+        var pct = totalVotes > 0 ? Math.round(count / totalVotes * 100) : 0;
+        var totalEl = btn.querySelector('[data-role="total"]');
+        if (totalEl) totalEl.textContent = 'Total: ' + count;
+        var wrapper = btn.parentNode;
+        if (wrapper) {
+          var fill = wrapper.querySelector('.poll-bar-fill');
+          if (fill) {
+            fill.style.display = 'block'; // bars always visible in frozen card
+            fill.style.width = pct + '%';
+          }
+          var track = wrapper.querySelector('.poll-bar-track');
+          if (track) track.style.display = 'block'; // always show in history
         }
       });
+
       messagesEl.appendChild(frozen);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
+
     cardArea.innerHTML = '';
 
-    // Re-enable instructor controls
     if (identity.role === 'instructor') {
       var cpBtn = document.getElementById('create-poll-btn');
       if (cpBtn) cpBtn.disabled = false;
