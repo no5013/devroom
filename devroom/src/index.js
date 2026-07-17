@@ -86,6 +86,23 @@ io.on('connection', (socket) => {
     io.to(sessionCode).emit('chat:message', message);
   });
 
+  // ── poll:vote ──────────────────────────────────────────────────────────
+  socket.on('poll:vote', function({ pollId, optionId }) {
+    const { sessionCode } = socket.data || {};
+    if (!sessionCode || !pollId || !optionId) return;
+    const session = store.getSessionByCode(sessionCode);
+    if (!session) return;
+    const activePoll = store.getActivePoll(session.sessionId);
+    if (!activePoll || activePoll.id !== pollId) return; // ignore votes for closed/wrong polls
+    // Increment
+    activePoll.results[optionId] = (activePoll.results[optionId] || 0) + 1;
+    // Broadcast updated totals to whole room
+    io.to(sessionCode).emit('poll:results', {
+      pollId,
+      totals: Object.assign({}, activePoll.results)
+    });
+  });
+
   // ── disconnect ─────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const { sessionCode, participantId } = socket.data || {};

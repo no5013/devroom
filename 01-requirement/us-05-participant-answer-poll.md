@@ -6,11 +6,11 @@
 
 ## Acceptance Criteria
 
-- [ ] When an active poll is broadcast, each answer option appears as a large, tappable button on the participant's screen
-- [ ] A participant can click/tap their chosen button multiple times (spam-friendly) — each click registers as an additional vote for that option
-- [ ] The button gives satisfying visual feedback on each click (e.g. ripple, bounce, counter increment)
-- [ ] The participant can switch their spam to a different option at any time while the poll is open
-- [ ] The live total count per option updates in real time for all participants
-- [ ] There is no cap on the number of times a single participant can vote within a poll (spam is the point)
-- [ ] When the instructor closes the poll, the buttons become disabled and a "Poll closed" state is shown
-- [ ] The participant's own contribution is visually distinguished from the aggregate (e.g. "You clicked 12 times" alongside the total)
+- [x] When an active poll is broadcast, each answer option appears as a large, tappable button on the participant's screen
+- [x] A participant can click/tap their chosen button multiple times (spam-friendly) — each click registers as an additional vote for that option
+- [x] The button gives satisfying visual feedback on each click (e.g. ripple, bounce, counter increment)
+- [x] The participant can switch their spam to a different option at any time while the poll is open
+- [x] The live total count per option updates in real time for all participants
+- [x] There is no cap on the number of times a single participant can vote within a poll (spam is the point)
+- [x] When the instructor closes the poll, the buttons become disabled and a "Poll closed" state is shown
+- [x] The participant's own contribution is visually distinguished from the aggregate (e.g. "You clicked 12 times" alongside the total)

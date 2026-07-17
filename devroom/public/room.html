@@ -397,22 +397,50 @@
       padding: 1rem 1.5rem;
     }
 
+    /* Vote buttons — large, tappable */
     .poll-vote-btn {
-      background: transparent;
-      border: 1px solid #3fb950;
-      color: #3fb950;
+      min-height: 80px;
+      min-width: 120px;
+      font-size: 1.1rem;
       font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
+      background: transparent;
+      border: 2px solid #3fb950;
+      color: #3fb950;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s;
+      padding: 0.5rem 1rem;
+      position: relative;
+      transition: background 0.1s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
     }
-
     .poll-vote-btn:disabled {
       border-color: #30363d;
       color: #484f58;
       cursor: not-allowed;
+    }
+    .poll-vote-btn .btn-total { font-size: 0.75rem; color: #8b949e; }
+    .poll-vote-btn .btn-personal { font-size: 0.7rem; color: #3fb950; }
+
+    /* Bounce animation — class toggled per click */
+    @keyframes btnBounce {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(0.88); }
+      100% { transform: scale(1); }
+    }
+    .poll-vote-btn.bounce {
+      animation: btnBounce 0.18s ease;
+    }
+
+    /* Poll closed label */
+    #poll-closed-label {
+      color: #f85149;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      display: none;
     }
 
     @keyframes slideInUp {
@@ -476,7 +504,8 @@
   <!-- Active poll overlay (shown to ALL clients when poll:started fires) -->
   <div id="active-poll-overlay" style="display:none; position:fixed; top:0; left:0; right:0; z-index:50; background:#161b22; border-bottom:2px solid #3fb950; padding:1rem 1.5rem;">
     <div id="poll-question-display" style="font-weight:bold; color:#c9d1d9; margin-bottom:0.75rem;"></div>
-    <div id="poll-options-display" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+    <div id="poll-options-display" style="display:flex; flex-wrap:wrap; gap:0.75rem;"></div>
+    <div id="poll-closed-label">Poll closed</div>
     <!-- Close button only shown to instructor -->
     <button id="close-poll-btn" style="display:none; margin-top:0.75rem; border-color:#f85149; color:#f85149;">Close Poll</button>
   </div>

@@ -295,41 +295,113 @@
   });
 
   // ── Incoming poll events ──────────────────────────────────────────────────
+  // Per-option personal click counters for the current poll
+  var personalCounts = {};   // optionId → number
+  var aggregateTotals = {};  // optionId → number (from server)
+  var pollClosed = false;
   var currentPollId = null;
 
-  socket.on('poll:started', function (poll) {
+  socket.on('poll:started', function(poll) {
     currentPollId = poll.id;
+    pollClosed = false;
+    personalCounts = {};
+    aggregateTotals = {};
 
-    // Show overlay
     var overlay = document.getElementById('active-poll-overlay');
     overlay.style.display = 'block';
     document.getElementById('poll-question-display').textContent = poll.question;
+    document.getElementById('poll-closed-label').style.display = 'none';
 
     var optDisplay = document.getElementById('poll-options-display');
     optDisplay.innerHTML = '';
-    poll.options.forEach(function (opt) {
+
+    poll.options.forEach(function(opt) {
+      personalCounts[opt.id] = 0;
+      aggregateTotals[opt.id] = 0;
+
       var btn = document.createElement('button');
       btn.className = 'poll-vote-btn';
-      btn.textContent = opt.label;
       btn.dataset.optionId = opt.id;
-      btn.disabled = true; // voting enabled in US-05
+
+      var labelEl = document.createElement('span');
+      labelEl.textContent = opt.label;
+
+      var totalEl = document.createElement('span');
+      totalEl.className = 'btn-total';
+      totalEl.textContent = 'Total: 0';
+      totalEl.dataset.role = 'total';
+
+      var personalEl = document.createElement('span');
+      personalEl.className = 'btn-personal';
+      personalEl.textContent = 'You: 0';
+      personalEl.dataset.role = 'personal';
+
+      btn.appendChild(labelEl);
+      btn.appendChild(totalEl);
+      btn.appendChild(personalEl);
+
+      // IMPL-05-2: emit poll:vote on every click
+      btn.addEventListener('click', function() {
+        if (pollClosed || btn.disabled) return;
+        // Emit vote
+        socket.emit('poll:vote', { pollId: currentPollId, optionId: opt.id });
+        // IMPL-05-4: personal counter
+        personalCounts[opt.id] = (personalCounts[opt.id] || 0) + 1;
+        personalEl.textContent = 'You: ' + personalCounts[opt.id];
+        // IMPL-05-3: bounce animation — remove and re-add class so rapid clicks each fire it
+        btn.classList.remove('bounce');
+        void btn.offsetWidth; // force reflow to restart animation
+        btn.classList.add('bounce');
+        btn.addEventListener('animationend', function onEnd() {
+          btn.classList.remove('bounce');
+          btn.removeEventListener('animationend', onEnd);
+        });
+      });
+
       optDisplay.appendChild(btn);
     });
 
-    // Show close button only for instructor
+    // Close button (instructor only)
     var closeBtn = document.getElementById('close-poll-btn');
     if (identity.role === 'instructor') {
       closeBtn.style.display = 'inline-block';
-      createPollBtn.disabled = true; // only one active poll
+      var createPollBtnInner = document.getElementById('create-poll-btn');
+      if (createPollBtnInner) createPollBtnInner.disabled = true;
+    } else {
+      closeBtn.style.display = 'none';
     }
   });
 
-  socket.on('poll:closed', function () {
+  // IMPL-05-7: live totals from server
+  socket.on('poll:results', function(ev) {
+    if (!ev || ev.pollId !== currentPollId) return;
+    aggregateTotals = ev.totals || {};
+    document.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
+      var optId = btn.dataset.optionId;
+      var totalEl = btn.querySelector('[data-role="total"]');
+      if (totalEl) totalEl.textContent = 'Total: ' + (aggregateTotals[optId] || 0);
+    });
+  });
+
+  // IMPL-05-8: poll closed state
+  socket.on('poll:closed', function(ev) {
+    pollClosed = true;
     currentPollId = null;
-    var overlay = document.getElementById('active-poll-overlay');
-    overlay.style.display = 'none';
+    // Disable all vote buttons and show closed label
+    document.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
+      btn.disabled = true;
+      btn.style.borderColor = '#30363d';
+      btn.style.color = '#484f58';
+    });
+    document.getElementById('poll-closed-label').style.display = 'block';
+    // Hide overlay after short delay (so participants see the final state)
+    setTimeout(function() {
+      var overlay = document.getElementById('active-poll-overlay');
+      overlay.style.display = 'none';
+    }, 2000);
+    // Re-enable create poll for instructor
     if (identity.role === 'instructor') {
-      createPollBtn.disabled = false;
+      if (createPollBtn) createPollBtn.disabled = false;
       loadPollHistory();
     }
   });

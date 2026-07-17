@@ -11,7 +11,7 @@
 | US-02 | [Real-Time Chat with Cool Effects](us-02-realtime-chat.md) | [x] Done |
 | US-03 | [Create and Manage a Session](us-03-create-session.md) | [x] Done |
 | US-04 | [Instructor Creates a Poll Question](us-04-instructor-create-poll.md) | [x] Done |
-| US-05 | [Participant Spams the Answer Button](us-05-participant-answer-poll.md) | [ ] Not done |
+| US-05 | [Participant Spams the Answer Button](us-05-participant-answer-poll.md) | [x] Done |
 | US-06 | [View Live Poll Results](us-06-live-poll-results.md) | [ ] Not done |
 
 ## Legend
