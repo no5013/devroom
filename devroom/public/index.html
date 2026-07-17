@@ -16,12 +16,23 @@
     button { width: 100%; padding: 0.7rem; background: transparent; border: 1px solid #3fb950; color: #3fb950; font-family: 'Courier New', monospace; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
     button:hover { background: #3fb95020; }
     #error { color: #f85149; margin-top: 1rem; font-size: 0.85rem; }
+
+    /* Confirmation screen */
+    #confirm-screen { width: 100%; max-width: 480px; }
+    #confirm-screen h2 { color: #3fb950; font-size: 1.5rem; margin-bottom: 1.5rem; }
+    .confirm-section { border: 1px solid #30363d; border-radius: 6px; padding: 1rem; background: #161b22; margin-bottom: 1rem; }
+    .confirm-section .label { display: block; color: #8b949e; font-size: 0.8rem; margin-bottom: 0.5rem; }
+    .confirm-section .label.warn { color: #f0883e; }
+    .confirm-section code { display: block; word-break: break-all; color: #c9d1d9; font-size: 0.8rem; background: #0d1117; padding: 0.5rem; border-radius: 4px; border: 1px solid #30363d; margin-bottom: 0.5rem; }
+    .confirm-section button { width: auto; padding: 0.35rem 0.75rem; font-size: 0.8rem; margin-bottom: 0.75rem; }
+    .instructor-section { border-color: #f0883e55; }
+    #open-room-btn { margin-top: 0.5rem; }
   </style>
 </head>
 <body>
   <h1>&gt; devroom</h1>
   <p class="subtitle">anonymous dev chat for training sessions</p>
-  <div class="card">
+  <div class="card" id="create-card">
     <form id="create-form">
       <label for="session-name">session name</label>
       <input id="session-name" type="text" placeholder="e.g. React Workshop Q3" required>
@@ -29,18 +40,64 @@
     </form>
     <p id="error"></p>
   </div>
+
+  <!-- Confirmation screen: shown after successful session creation -->
+  <div id="confirm-screen" style="display:none">
+    <h2>&gt; session created</h2>
+
+    <div class="confirm-section">
+      <span class="label">Share with participants:</span>
+      <code id="participant-url-display"></code>
+      <button id="copy-participant-url">Copy</button>
+      <img id="participant-qr" alt="QR code" width="150" height="150">
+    </div>
+
+    <div class="confirm-section instructor-section">
+      <span class="label warn">&#9888; Your private moderator link — do not share:</span>
+      <code id="instructor-url-display"></code>
+      <button id="copy-instructor-url">Copy</button>
+    </div>
+
+    <button id="open-room-btn">Open as Instructor →</button>
+  </div>
+
   <script>
+    var _instructorUrl = '';
+
     document.getElementById('create-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const name = document.getElementById('session-name').value.trim();
+      var name = document.getElementById('session-name').value.trim();
+      document.getElementById('error').textContent = '';
       try {
-        const res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
-        const data = await res.json();
+        var res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+        var data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to create session');
-        window.location.href = data.instructorUrl;
+
+        var participantUrl = window.location.origin + data.participantUrl;
+        _instructorUrl = window.location.origin + data.instructorUrl;
+
+        document.getElementById('participant-url-display').textContent = participantUrl;
+        document.getElementById('instructor-url-display').textContent = _instructorUrl;
+        document.getElementById('participant-qr').src = '/api/sessions/qr?url=' + encodeURIComponent(participantUrl);
+
+        // Hide form, show confirmation
+        document.getElementById('create-card').style.display = 'none';
+        document.getElementById('confirm-screen').style.display = 'block';
       } catch (err) {
         document.getElementById('error').textContent = err.message;
       }
+    });
+
+    document.getElementById('copy-participant-url').addEventListener('click', function() {
+      navigator.clipboard.writeText(document.getElementById('participant-url-display').textContent);
+    });
+
+    document.getElementById('copy-instructor-url').addEventListener('click', function() {
+      navigator.clipboard.writeText(document.getElementById('instructor-url-display').textContent);
+    });
+
+    document.getElementById('open-room-btn').addEventListener('click', function() {
+      window.location.href = _instructorUrl;
     });
   </script>
 </body>

@@ -3,8 +3,13 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const QRCode = require('qrcode');
 const store = require('../sessionStore');
 const { generateUniqueName } = require('../nameGenerator');
+
+// io instance injected by src/index.js after Socket.io is created
+let io;
+router.setIo = function (ioInstance) { io = ioInstance; };
 
 /**
  * POST /api/sessions
@@ -65,8 +70,39 @@ router.post('/:code/join', (req, res) => {
     name,
     avatarSeed,
     token,
-    role
+    role,
+    sessionName: session.name
   });
+});
+
+/**
+ * GET /api/sessions/qr?url=<encoded-url>  →  returns PNG QR code
+ */
+router.get('/qr', async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: 'url required' });
+  try {
+    const png = await QRCode.toBuffer(url, { width: 150 });
+    res.setHeader('Content-Type', 'image/png');
+    res.send(png);
+  } catch (e) {
+    res.status(500).json({ error: 'QR generation failed' });
+  }
+});
+
+/**
+ * DELETE /api/sessions/:sessionId?token=<instructorToken>
+ * Ends a session and broadcasts session:ended to all participants.
+ */
+router.delete('/:sessionId', (req, res) => {
+  const session = store.sessions.get(req.params.sessionId);
+  if (!session) return res.status(404).json({ error: 'Not found' });
+  if (req.query.token !== session.instructorToken) return res.status(403).json({ error: 'Forbidden' });
+  store.endSession(req.params.sessionId);
+  if (io) {
+    io.to(session.code).emit('session:ended', { message: 'The session has ended.' });
+  }
+  res.json({ ok: true });
 });
 
 module.exports = router;

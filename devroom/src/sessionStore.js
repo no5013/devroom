@@ -87,11 +87,34 @@ function hasSession(code) {
   return sessionsByCode.has(code);
 }
 
+/**
+ * endSession(sessionId)
+ * Marks the session as ended.
+ */
+function endSession(sessionId) {
+  const session = sessions.get(sessionId);
+  if (session) session.ended = true;
+}
+
+/**
+ * isEnded(code)
+ * Returns boolean — true if the session has been ended.
+ */
+function isEnded(code) {
+  const sessionId = sessionsByCode.get(code);
+  if (!sessionId) return false;
+  const session = sessions.get(sessionId);
+  return !!(session && session.ended);
+}
+
 module.exports = {
+  sessions,
   createSession,
   getSessionByCode,
   addParticipant,
   getParticipant,
   getActiveNames,
-  hasSession
+  hasSession,
+  endSession,
+  isEnded
 };

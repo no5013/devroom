@@ -8,11 +8,12 @@ const { v4: uuidv4 } = require('uuid');
 const store = require('./sessionStore');
 
 const app = express();
+const sessionsRouter = require('./routes/sessions');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-app.use('/api/sessions', require('./routes/sessions'));
+app.use('/api/sessions', sessionsRouter);
 app.use('/api/avatar', require('./routes/avatar'));
 
 // Serve join.html for /join route
@@ -26,6 +27,7 @@ app.get('/lib/confetti.js', (req, res) =>
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: '*' } });
+sessionsRouter.setIo(io);
 
 io.on('connection', (socket) => {
   // ── chat:join ──────────────────────────────────────────────────────────
@@ -49,6 +51,13 @@ io.on('connection', (socket) => {
       presenceList.push({ participantId: id, name: p.name, avatarSeed: p.avatarSeed, role: p.role });
     }
     socket.emit('presence:list', presenceList);
+
+    // Send session info to the joining socket
+    socket.emit('session:info', {
+      sessionName: session.name,
+      sessionId: session.sessionId,
+      instructorToken: participant.role === 'instructor' ? session.instructorToken : undefined,
+    });
 
     // Broadcast join to everyone in the room
     io.to(sessionCode).emit('presence:join', {

@@ -235,6 +235,45 @@
     #send-btn:hover:not(:disabled) { background: #3fb95020; }
     #send-btn:disabled { border-color: #30363d; color: #484f58; cursor: not-allowed; }
 
+    /* ── Instructor panel ── */
+    #instructor-panel {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    #participant-count {
+      font-size: 0.8rem;
+      color: #8b949e;
+    }
+
+    #instructor-panel button {
+      width: 100%;
+      background: transparent;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #end-session-btn {
+      border: 1px solid #f85149;
+      color: #f85149;
+    }
+
+    #end-session-btn:hover:not(:disabled) { background: #f8514920; }
+    #end-session-btn:disabled { border-color: #30363d; color: #484f58; cursor: not-allowed; }
+
+    #create-poll-btn {
+      border: 1px solid #30363d;
+      color: #484f58;
+      cursor: not-allowed;
+    }
+
     @keyframes slideInUp {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -247,6 +286,12 @@
     <aside id="sidebar">
       <div id="session-name">devroom</div>
       <ul id="participants-list"><!-- .participant-item per person --></ul>
+      <!-- Instructor panel: hidden by default, shown only for instructors -->
+      <div id="instructor-panel" style="display:none">
+        <div id="participant-count">0 online</div>
+        <button id="end-session-btn">End Session</button>
+        <button id="create-poll-btn" disabled title="Coming in US-04">Create Poll</button>
+      </div>
     </aside>
 
     <!-- Main chat area -->
@@ -258,6 +303,11 @@
         <button id="send-btn" type="submit">Send</button>
       </form>
     </main>
+  </div>
+  <!-- Session ended modal: hidden by default -->
+  <div id="session-ended-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100; align-items:center; justify-content:center; flex-direction:column;">
+    <h2 style="color:#f85149">&gt; session ended</h2>
+    <p style="color:#8b949e">The instructor has ended this session.</p>
   </div>
   <script src="/js/room.js"></script>
 </body>

@@ -67,6 +67,10 @@
       li.appendChild(span);
       participantsList.appendChild(li);
     });
+    // Update participant count in instructor panel
+    var count = Object.keys(participants).length;
+    var countEl = document.getElementById('participant-count');
+    if (countEl) countEl.textContent = count + ' online';
   }
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
@@ -208,6 +212,34 @@
     // Simple confetti burst in green
     confetti({ particleCount: 60, spread: 60, colors: ['#3fb950', '#f0883e', '#58a6ff'], origin: { y: 0.6 } });
   }
+
+  // ── Session info ──────────────────────────────────────────────────────────
+  socket.on('session:info', function (info) {
+    document.getElementById('session-name').textContent = '> ' + info.sessionName;
+    if (identity.role === 'instructor') {
+      document.getElementById('instructor-panel').style.display = 'block';
+      window._instructorToken = info.instructorToken;
+      window._sessionId = info.sessionId;
+    }
+  });
+
+  // ── End session button ────────────────────────────────────────────────────
+  document.getElementById('end-session-btn').addEventListener('click', function () {
+    if (!confirm('End this session for everyone?')) return;
+    fetch('/api/sessions/' + window._sessionId + '?token=' + window._instructorToken, { method: 'DELETE' })
+      .then(function (r) { return r.json(); })
+      .catch(function () {});
+  });
+
+  // ── Session ended ─────────────────────────────────────────────────────────
+  socket.on('session:ended', function () {
+    var modal = document.getElementById('session-ended-modal');
+    modal.style.display = 'flex';
+    document.getElementById('send-btn').disabled = true;
+    document.getElementById('chat-input').disabled = true;
+    var endBtn = document.getElementById('end-session-btn');
+    if (endBtn) endBtn.disabled = true;
+  });
 
   // Auto-resize textarea
   inputEl.addEventListener('input', function () {
