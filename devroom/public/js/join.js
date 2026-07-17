@@ -1,9 +1,11 @@
 (function () {
   'use strict';
 
-  // IMPL-01-7: Read session code from URL query param
+  // IMPL-01-7: Read session code (and optional instructor role/token) from URL query params
   var params = new URLSearchParams(window.location.search);
   var sessionCode = params.get('code');
+  var roleParam  = params.get('role');
+  var tokenParam = params.get('token');
 
   var errorEl = document.getElementById('error');
 
@@ -30,11 +32,14 @@
   }
 
   // IMPL-01-6: Identity persistence — check sessionStorage for existing identity
+  // Skip the cache if the URL is requesting a specific role (e.g. instructor link)
+  // that differs from what was previously cached, so role is always applied correctly.
   var stored = sessionStorage.getItem('devroom_identity');
   if (stored) {
     try {
       var cached = JSON.parse(stored);
-      if (cached && cached.sessionCode === sessionCode) {
+      var cachedRoleMatches = !roleParam || cached.role === roleParam;
+      if (cached && cached.sessionCode === sessionCode && cachedRoleMatches) {
         renderIdentity(cached);
         return;
       }
@@ -43,8 +48,14 @@
     }
   }
 
+  // Build join URL, forwarding role + token if present (instructor link)
+  var joinUrl = '/api/sessions/' + sessionCode + '/join';
+  if (roleParam && tokenParam) {
+    joinUrl += '?role=' + encodeURIComponent(roleParam) + '&token=' + encodeURIComponent(tokenParam);
+  }
+
   // Call join API to get a new identity
-  fetch('/api/sessions/' + sessionCode + '/join', {
+  fetch(joinUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   })
