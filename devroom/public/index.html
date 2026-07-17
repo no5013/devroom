@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>devroom</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0d1117; color: #c9d1d9; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    h1 { color: #3fb950; font-size: 2rem; margin-bottom: 0.5rem; }
+    .subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 0.9rem; }
+    .card { border: 1px solid #30363d; border-radius: 6px; padding: 2rem; width: 100%; max-width: 400px; background: #161b22; }
+    label { display: block; color: #8b949e; font-size: 0.8rem; margin-bottom: 0.5rem; }
+    input { width: 100%; padding: 0.6rem 0.8rem; background: #0d1117; border: 1px solid #30363d; border-radius: 4px; color: #c9d1d9; font-family: 'Courier New', monospace; font-size: 1rem; margin-bottom: 1rem; outline: none; }
+    input:focus { border-color: #3fb950; }
+    button { width: 100%; padding: 0.7rem; background: transparent; border: 1px solid #3fb950; color: #3fb950; font-family: 'Courier New', monospace; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
+    button:hover { background: #3fb95020; }
+    #error { color: #f85149; margin-top: 1rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>&gt; devroom</h1>
+  <p class="subtitle">anonymous dev chat for training sessions</p>
+  <div class="card">
+    <form id="create-form">
+      <label for="session-name">session name</label>
+      <input id="session-name" type="text" placeholder="e.g. React Workshop Q3" required>
+      <button type="submit">Create Session →</button>
+    </form>
+    <p id="error"></p>
+  </div>
+  <script>
+    document.getElementById('create-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('session-name').value.trim();
+      try {
+        const res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to create session');
+        window.location.href = data.instructorUrl;
+      } catch (err) {
+        document.getElementById('error').textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>
