@@ -30,7 +30,8 @@ function createSession(name) {
     code,
     instructorToken,
     participants: new Map(), // participantId -> { participantId, name, token }
-    activeNames: new Set()
+    activeNames: new Set(),
+    polls: []
   };
 
   sessions.set(sessionId, session);
@@ -107,6 +108,62 @@ function isEnded(code) {
   return !!(session && session.ended);
 }
 
+/**
+ * createPoll(sessionId, { question, options })
+ * options is array of { id: uuid, label: string }
+ * Returns the new poll object.
+ */
+function createPoll(sessionId, { question, options }) {
+  const { v4: uuidv4 } = require('uuid');
+  const session = sessions.get(sessionId);
+  if (!session) throw new Error(`Session ${sessionId} not found`);
+  if (!session.polls) session.polls = [];
+  const poll = {
+    id: uuidv4(),
+    question,
+    options,
+    status: 'active',
+    results: {},
+    createdAt: Date.now()
+  };
+  session.polls.push(poll);
+  return poll;
+}
+
+/**
+ * getActivePoll(sessionId)
+ * Returns first poll where status === 'active', or null.
+ */
+function getActivePoll(sessionId) {
+  const session = sessions.get(sessionId);
+  if (!session || !session.polls) return null;
+  return session.polls.find(function(p) { return p.status === 'active'; }) || null;
+}
+
+/**
+ * closePoll(sessionId, pollId)
+ * Sets poll.status = 'closed' and records poll.closedAt.
+ */
+function closePoll(sessionId, pollId) {
+  const session = sessions.get(sessionId);
+  if (!session || !session.polls) return;
+  const poll = session.polls.find(function(p) { return p.id === pollId; });
+  if (poll) {
+    poll.status = 'closed';
+    poll.closedAt = Date.now();
+  }
+}
+
+/**
+ * getPolls(sessionId)
+ * Returns session.polls array (all, sorted by createdAt).
+ */
+function getPolls(sessionId) {
+  const session = sessions.get(sessionId);
+  if (!session || !session.polls) return [];
+  return session.polls.slice().sort(function(a, b) { return a.createdAt - b.createdAt; });
+}
+
 module.exports = {
   sessions,
   createSession,
@@ -116,5 +173,9 @@ module.exports = {
   getActiveNames,
   hasSession,
   endSession,
-  isEnded
+  isEnded,
+  createPoll,
+  getActivePoll,
+  closePoll,
+  getPolls
 };

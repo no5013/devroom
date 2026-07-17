@@ -9,11 +9,13 @@ const store = require('./sessionStore');
 
 const app = express();
 const sessionsRouter = require('./routes/sessions');
+const pollsRouter = require('./routes/polls');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/api/sessions', sessionsRouter);
+app.use('/api/sessions/:sessionId/polls', pollsRouter);
 app.use('/api/avatar', require('./routes/avatar'));
 
 // Serve join.html for /join route
@@ -28,6 +30,7 @@ app.get('/lib/confetti.js', (req, res) =>
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: '*' } });
 sessionsRouter.setIo(io);
+pollsRouter.setIo(io);
 
 io.on('connection', (socket) => {
   // ── chat:join ──────────────────────────────────────────────────────────

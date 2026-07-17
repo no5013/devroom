@@ -269,7 +269,148 @@
     #end-session-btn:disabled { border-color: #30363d; color: #484f58; cursor: not-allowed; }
 
     #create-poll-btn {
+      border: 1px solid #58a6ff;
+      color: #58a6ff;
+    }
+
+    #create-poll-btn:hover:not(:disabled) { background: #58a6ff20; }
+    #create-poll-btn:disabled { border-color: #30363d; color: #484f58; cursor: not-allowed; }
+
+    /* ── Poll drawer ── */
+    #poll-drawer {
+      background: #0d1117;
       border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 0.75rem;
+      margin-top: 0.25rem;
+      display: none;
+    }
+
+    #poll-drawer h3 {
+      color: #58a6ff;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #poll-question {
+      width: 100%;
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    #poll-question:focus { outline: none; border-color: #58a6ff; }
+
+    .poll-option-row {
+      display: flex;
+      gap: 0.3rem;
+      margin-bottom: 0.3rem;
+      align-items: center;
+    }
+
+    .poll-option-input {
+      flex: 1;
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .poll-option-input:focus { outline: none; border-color: #58a6ff; }
+
+    .remove-option-btn {
+      background: transparent;
+      border: 1px solid #f85149;
+      color: #f85149;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      cursor: pointer;
+      width: auto !important;
+      flex-shrink: 0;
+    }
+
+    .remove-option-btn:hover { background: #f8514920; }
+
+    #add-option-btn {
+      width: 100% !important;
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.3rem;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-bottom: 0.3rem;
+    }
+
+    #add-option-btn:hover:not(:disabled) { background: #30363d40; }
+    #add-option-btn:disabled { color: #484f58; cursor: not-allowed; }
+
+    #submit-poll-btn {
+      flex: 1;
+      background: transparent;
+      border: 1px solid #3fb950;
+      color: #3fb950;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #submit-poll-btn:hover { background: #3fb95020; }
+
+    #cancel-poll-btn {
+      flex: 1;
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #cancel-poll-btn:hover { background: #30363d40; }
+
+    /* ── Active poll overlay ── */
+    #active-poll-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: #161b22;
+      border-bottom: 2px solid #3fb950;
+      padding: 1rem 1.5rem;
+    }
+
+    .poll-vote-btn {
+      background: transparent;
+      border: 1px solid #3fb950;
+      color: #3fb950;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .poll-vote-btn:disabled {
+      border-color: #30363d;
       color: #484f58;
       cursor: not-allowed;
     }
@@ -290,7 +431,35 @@
       <div id="instructor-panel" style="display:none">
         <div id="participant-count">0 online</div>
         <button id="end-session-btn">End Session</button>
-        <button id="create-poll-btn" disabled title="Coming in US-04">Create Poll</button>
+        <button id="create-poll-btn">Create Poll</button>
+
+        <!-- Poll creation drawer — hidden by default -->
+        <div id="poll-drawer" style="display:none">
+          <h3>&gt; create poll</h3>
+          <div id="poll-form-error" style="color:#f85149; font-size:0.8rem; min-height:1rem;"></div>
+          <input id="poll-question" type="text" placeholder="Question..." maxlength="200">
+          <div id="poll-options-list">
+            <div class="poll-option-row">
+              <input class="poll-option-input" type="text" placeholder="Option 1" maxlength="30">
+            </div>
+            <div class="poll-option-row">
+              <input class="poll-option-input" type="text" placeholder="Option 2" maxlength="30">
+            </div>
+          </div>
+          <button id="add-option-btn">+ Add option</button>
+          <div style="display:flex; gap:0.5rem; margin-top:0.5rem">
+            <button id="submit-poll-btn">Post Poll &rarr;</button>
+            <button id="cancel-poll-btn">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Poll history section (instructor only) -->
+        <div id="poll-history" style="display:none; margin-top:1rem; border-top:1px solid #30363d; padding-top:0.5rem;">
+          <details>
+            <summary style="cursor:pointer; color:#8b949e; font-size:0.8rem;">Past Polls</summary>
+            <ul id="poll-history-list" style="list-style:none; padding:0; margin-top:0.5rem;"></ul>
+          </details>
+        </div>
       </div>
     </aside>
 
@@ -304,6 +473,14 @@
       </form>
     </main>
   </div>
+  <!-- Active poll overlay (shown to ALL clients when poll:started fires) -->
+  <div id="active-poll-overlay" style="display:none; position:fixed; top:0; left:0; right:0; z-index:50; background:#161b22; border-bottom:2px solid #3fb950; padding:1rem 1.5rem;">
+    <div id="poll-question-display" style="font-weight:bold; color:#c9d1d9; margin-bottom:0.75rem;"></div>
+    <div id="poll-options-display" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+    <!-- Close button only shown to instructor -->
+    <button id="close-poll-btn" style="display:none; margin-top:0.75rem; border-color:#f85149; color:#f85149;">Close Poll</button>
+  </div>
+
   <!-- Session ended modal: hidden by default -->
   <div id="session-ended-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100; align-items:center; justify-content:center; flex-direction:column;">
     <h2 style="color:#f85149">&gt; session ended</h2>

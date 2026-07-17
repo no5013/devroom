@@ -220,8 +220,154 @@
       document.getElementById('instructor-panel').style.display = 'block';
       window._instructorToken = info.instructorToken;
       window._sessionId = info.sessionId;
+      loadPollHistory();
     }
   });
+
+  // ── Poll drawer toggle ────────────────────────────────────────────────────
+  var createPollBtn = document.getElementById('create-poll-btn');
+  var pollDrawer = document.getElementById('poll-drawer');
+
+  createPollBtn.addEventListener('click', function () {
+    pollDrawer.style.display = pollDrawer.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.getElementById('cancel-poll-btn').addEventListener('click', function () {
+    pollDrawer.style.display = 'none';
+    document.getElementById('poll-form-error').textContent = '';
+  });
+
+  // ── Add/remove option rows ────────────────────────────────────────────────
+  document.getElementById('add-option-btn').addEventListener('click', function () {
+    var list = document.getElementById('poll-options-list');
+    var rows = list.querySelectorAll('.poll-option-row');
+    if (rows.length >= 6) return;
+    var row = document.createElement('div');
+    row.className = 'poll-option-row';
+    var n = rows.length + 1;
+    var inp = document.createElement('input');
+    inp.className = 'poll-option-input';
+    inp.type = 'text';
+    inp.placeholder = 'Option ' + n;
+    inp.maxLength = 30;
+    var rmBtn = document.createElement('button');
+    rmBtn.textContent = '✕';
+    rmBtn.className = 'remove-option-btn';
+    rmBtn.addEventListener('click', function () {
+      var remaining = list.querySelectorAll('.poll-option-row');
+      if (remaining.length <= 2) return; // min 2
+      list.removeChild(row);
+    });
+    row.appendChild(inp);
+    row.appendChild(rmBtn);
+    list.appendChild(row);
+    if (list.querySelectorAll('.poll-option-row').length >= 6) {
+      document.getElementById('add-option-btn').disabled = true;
+    }
+  });
+
+  // ── Submit poll ───────────────────────────────────────────────────────────
+  document.getElementById('submit-poll-btn').addEventListener('click', function () {
+    var question = document.getElementById('poll-question').value.trim();
+    var optionInputs = document.querySelectorAll('.poll-option-input');
+    var options = Array.from(optionInputs).map(function (i) { return i.value.trim(); }).filter(Boolean);
+    var errEl = document.getElementById('poll-form-error');
+
+    if (!question) { errEl.textContent = 'Question cannot be empty.'; return; }
+    if (options.length < 2) { errEl.textContent = 'At least 2 non-empty options required.'; return; }
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].length > 30) { errEl.textContent = 'Option "' + options[i].slice(0, 20) + '…" exceeds 30 chars.'; return; }
+    }
+    errEl.textContent = '';
+
+    fetch('/api/sessions/' + window._sessionId + '/polls?token=' + window._instructorToken, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: question, options: options })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok) { errEl.textContent = res.data.error || 'Failed to create poll'; return; }
+        pollDrawer.style.display = 'none';
+        // poll:started will be broadcast and handled below
+      })
+      .catch(function () { errEl.textContent = 'Network error'; });
+  });
+
+  // ── Incoming poll events ──────────────────────────────────────────────────
+  var currentPollId = null;
+
+  socket.on('poll:started', function (poll) {
+    currentPollId = poll.id;
+
+    // Show overlay
+    var overlay = document.getElementById('active-poll-overlay');
+    overlay.style.display = 'block';
+    document.getElementById('poll-question-display').textContent = poll.question;
+
+    var optDisplay = document.getElementById('poll-options-display');
+    optDisplay.innerHTML = '';
+    poll.options.forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.className = 'poll-vote-btn';
+      btn.textContent = opt.label;
+      btn.dataset.optionId = opt.id;
+      btn.disabled = true; // voting enabled in US-05
+      optDisplay.appendChild(btn);
+    });
+
+    // Show close button only for instructor
+    var closeBtn = document.getElementById('close-poll-btn');
+    if (identity.role === 'instructor') {
+      closeBtn.style.display = 'inline-block';
+      createPollBtn.disabled = true; // only one active poll
+    }
+  });
+
+  socket.on('poll:closed', function () {
+    currentPollId = null;
+    var overlay = document.getElementById('active-poll-overlay');
+    overlay.style.display = 'none';
+    if (identity.role === 'instructor') {
+      createPollBtn.disabled = false;
+      loadPollHistory();
+    }
+  });
+
+  // ── Close poll (instructor) ───────────────────────────────────────────────
+  document.getElementById('close-poll-btn').addEventListener('click', function () {
+    if (!currentPollId) return;
+    fetch('/api/sessions/' + window._sessionId + '/polls/' + currentPollId + '?token=' + window._instructorToken, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'closed' })
+    }).catch(function () {});
+  });
+
+  // ── Poll history (instructor only) ────────────────────────────────────────
+  function loadPollHistory() {
+    if (identity.role !== 'instructor') return;
+    fetch('/api/sessions/' + window._sessionId + '/polls?token=' + window._instructorToken)
+      .then(function (r) { return r.json(); })
+      .then(function (polls) {
+        var histEl = document.getElementById('poll-history');
+        var listEl = document.getElementById('poll-history-list');
+        var closedPolls = polls.filter(function (p) { return p.status === 'closed'; });
+        histEl.style.display = closedPolls.length ? 'block' : 'none';
+        listEl.innerHTML = '';
+        closedPolls.forEach(function (poll) {
+          var li = document.createElement('li');
+          li.style.cssText = 'margin-bottom:0.5rem; font-size:0.8rem; color:#8b949e;';
+          li.innerHTML = '<strong style="color:#c9d1d9">' + poll.question + '</strong>';
+          poll.options.forEach(function (opt) {
+            var votes = (poll.results && poll.results[opt.id]) || 0;
+            li.innerHTML += '<div style="padding-left:0.5rem">' + opt.label + ': <span style="color:#3fb950">' + votes + ' votes</span></div>';
+          });
+          listEl.appendChild(li);
+        });
+      })
+      .catch(function () {});
+  }
 
   // ── End session button ────────────────────────────────────────────────────
   document.getElementById('end-session-btn').addEventListener('click', function () {
