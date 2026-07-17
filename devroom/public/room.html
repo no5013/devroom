@@ -492,6 +492,57 @@
     body.projector-mode .bar-label { font-size: 1rem; }
     body.projector-mode .bar-track { height: 24px; }
     body.projector-mode .bar-fill { background: #ffffff; }
+
+    /* Poll card area — sits between messages and input */
+    #poll-card-area {
+      flex-shrink: 0;
+      padding: 0 0.5rem;
+    }
+    /* Poll card */
+    .poll-card {
+      border-left: 4px solid #3fb950;
+      background: #0d1f12;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.25rem 0;
+    }
+    .poll-card-frozen {
+      opacity: 0.75;
+      border-left-color: #484f58;
+    }
+    .poll-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .poll-badge {
+      color: #3fb950;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    .poll-card-question {
+      color: #c9d1d9;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 0.75rem;
+    }
+    .poll-card-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    #close-poll-btn-card {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid #f85149;
+      color: #f85149;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -504,35 +555,6 @@
       <div id="instructor-panel" style="display:none">
         <div id="participant-count">0 online</div>
         <button id="end-session-btn">End Session</button>
-        <button id="create-poll-btn">Create Poll</button>
-
-        <!-- Poll creation drawer — hidden by default -->
-        <div id="poll-drawer" style="display:none">
-          <h3>&gt; create poll</h3>
-          <div id="poll-form-error" style="color:#f85149; font-size:0.8rem; min-height:1rem;"></div>
-          <input id="poll-question" type="text" placeholder="Question..." maxlength="200">
-          <div id="poll-options-list">
-            <div class="poll-option-row">
-              <input class="poll-option-input" type="text" placeholder="Option 1" maxlength="30">
-            </div>
-            <div class="poll-option-row">
-              <input class="poll-option-input" type="text" placeholder="Option 2" maxlength="30">
-            </div>
-          </div>
-          <button id="add-option-btn">+ Add option</button>
-          <div style="display:flex; gap:0.5rem; margin-top:0.5rem">
-            <button id="submit-poll-btn">Post Poll &rarr;</button>
-            <button id="cancel-poll-btn">Cancel</button>
-          </div>
-        </div>
-
-        <!-- Poll history section (instructor only) -->
-        <div id="poll-history" style="display:none; margin-top:1rem; border-top:1px solid #30363d; padding-top:0.5rem;">
-          <details>
-            <summary style="cursor:pointer; color:#8b949e; font-size:0.8rem;">Past Polls</summary>
-            <ul id="poll-history-list" style="list-style:none; padding:0; margin-top:0.5rem;"></ul>
-          </details>
-        </div>
 
         <!-- Live results panel — shown to instructor when poll is active -->
         <div id="results-panel" style="display:none; margin-top:1rem; border-top:1px solid #30363d; padding-top:0.75rem;">
@@ -561,14 +583,15 @@
     <main id="chat-area">
       <div id="messages"><!-- .message divs appended here --></div>
       <button id="scroll-bottom-btn" hidden>↓ New messages</button>
+      <div id="poll-card-area"></div>
       <form id="chat-form">
         <textarea id="chat-input" rows="1" placeholder="say something... (Shift+Enter for newline)"></textarea>
         <button id="send-btn" type="submit">Send</button>
       </form>
     </main>
   </div>
-  <!-- Active poll overlay (shown to ALL clients when poll:started fires) -->
-  <div id="active-poll-overlay" style="display:none; position:fixed; top:0; left:0; right:0; z-index:50; background:#161b22; border-bottom:2px solid #3fb950; padding:1rem 1.5rem;">
+  <!-- Active poll overlay (kept for backwards-compat with older tests) -->
+  <div id="active-poll-overlay" style="display:none !important; position:fixed; top:0; left:0; right:0; z-index:50; background:#161b22; border-bottom:2px solid #3fb950; padding:1rem 1.5rem;">
     <div id="poll-question-display" style="font-weight:bold; color:#c9d1d9; margin-bottom:0.75rem;"></div>
     <div id="poll-options-display" style="display:flex; flex-wrap:wrap; gap:0.75rem;"></div>
     <div id="poll-closed-label">Poll closed</div>

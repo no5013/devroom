@@ -55,6 +55,12 @@ io.on('connection', (socket) => {
     }
     socket.emit('presence:list', presenceList);
 
+    // Send active poll to late joiners
+    var activePoll = store.getActivePoll(session.sessionId);
+    if (activePoll) {
+      socket.emit('poll:active', activePoll);
+    }
+
     // Send session info to the joining socket
     socket.emit('session:info', {
       sessionName: session.name,

@@ -15,7 +15,7 @@
 | US-06 — View Live Poll Results | [plan-us-06-live-poll-results.md](plan-us-06-live-poll-results.md) | 7 | 7 | [x] Done |
 
 | US-07 — Create Poll via `/poll` Chat Command | [plan-us-07-poll-chat-command.md](plan-us-07-poll-chat-command.md) | 8 | 9 | [x] Done |
-| US-08 — Poll Renders as Inline Chat Bubble | _(pending)_ | — | — | [ ] Not done |
+| US-08 — Poll Renders as Inline Chat Bubble | [plan-us-08-poll-chat-bubble.md](plan-us-08-poll-chat-bubble.md) | 8 | 9 | [x] Done |
 | US-09 — Vote and See Live Results Inside Chat Bubble | _(pending)_ | — | — | [ ] Not done |
 | US-10 — Close Poll via Chat Command or In-Card Button | _(pending)_ | — | — | [ ] Not done |
 
