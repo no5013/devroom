@@ -96,11 +96,28 @@ io.on('connection', (socket) => {
     if (!activePoll || activePoll.id !== pollId) return; // ignore votes for closed/wrong polls
     // Increment
     activePoll.results[optionId] = (activePoll.results[optionId] || 0) + 1;
-    // Broadcast updated totals to whole room
+    // Track unique voters
+    if (socket.data.participantId) {
+      activePoll.voters.add(socket.data.participantId);
+    }
+    // Broadcast with voterCount
     io.to(sessionCode).emit('poll:results', {
       pollId,
-      totals: Object.assign({}, activePoll.results)
+      totals: Object.assign({}, activePoll.results),
+      voterCount: activePoll.voters.size
     });
+  });
+
+  // ── poll:results-visibility ────────────────────────────────────────────────
+  socket.on('poll:results-visibility', function({ visible }) {
+    const { sessionCode } = socket.data || {};
+    if (!sessionCode) return;
+    const session = store.getSessionByCode(sessionCode);
+    if (!session) return;
+    // Validate caller is instructor
+    const participant = store.getParticipant(session.sessionId, socket.data.participantId);
+    if (!participant || participant.role !== 'instructor') return;
+    io.to(sessionCode).emit('poll:results-visibility', { visible: !!visible });
   });
 
   // ── disconnect ─────────────────────────────────────────────────────────

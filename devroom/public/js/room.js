@@ -301,6 +301,40 @@
   var pollClosed = false;
   var currentPollId = null;
 
+  function renderBars(containerId, totals, options, voterCount) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var totalVotes = Object.values(totals).reduce(function(s, v) { return s + v; }, 0);
+    container.innerHTML = '';
+    options.forEach(function(opt) {
+      var count = totals[opt.id] || 0;
+      var pct = totalVotes > 0 ? Math.round(count / totalVotes * 100) : 0;
+      var row = document.createElement('div');
+      row.className = 'bar-row';
+      row.dataset.optionId = opt.id;
+      row.innerHTML =
+        '<div class="bar-label"><span>' + opt.label + '</span>' +
+        '<span class="bar-stat">' + count + ' (' + pct + '%)</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>';
+      container.appendChild(row);
+    });
+  }
+
+  function updateBars(containerId, totals) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var totalVotes = Object.values(totals).reduce(function(s, v) { return s + v; }, 0);
+    container.querySelectorAll('.bar-row').forEach(function(row) {
+      var optId = row.dataset.optionId;
+      var count = totals[optId] || 0;
+      var pct = totalVotes > 0 ? Math.round(count / totalVotes * 100) : 0;
+      var fill = row.querySelector('.bar-fill');
+      var stat = row.querySelector('.bar-stat');
+      if (fill) fill.style.width = pct + '%';
+      if (stat) stat.textContent = count + ' (' + pct + '%)';
+    });
+  }
+
   socket.on('poll:started', function(poll) {
     currentPollId = poll.id;
     pollClosed = false;
@@ -361,12 +395,26 @@
       optDisplay.appendChild(btn);
     });
 
+    // Store options list for bar updates (all clients)
+    window._currentPollOptions = poll.options;
+
     // Close button (instructor only)
     var closeBtn = document.getElementById('close-poll-btn');
     if (identity.role === 'instructor') {
       closeBtn.style.display = 'inline-block';
       var createPollBtnInner = document.getElementById('create-poll-btn');
       if (createPollBtnInner) createPollBtnInner.disabled = true;
+      // Show and initialise results panel
+      var resultsPanel = document.getElementById('results-panel');
+      resultsPanel.style.display = 'block';
+      document.getElementById('results-heading').textContent = 'Live Results';
+      document.getElementById('results-voter-count').textContent = '0 participants responded';
+      renderBars('results-bars', {}, poll.options);
+      // Reset show-to-room state
+      window._showResultsToRoom = false;
+      document.getElementById('show-results-btn').textContent = 'Show to room: OFF';
+      var showBtn = document.getElementById('show-results-btn');
+      if (showBtn) showBtn.disabled = false;
     } else {
       closeBtn.style.display = 'none';
     }
@@ -376,11 +424,24 @@
   socket.on('poll:results', function(ev) {
     if (!ev || ev.pollId !== currentPollId) return;
     aggregateTotals = ev.totals || {};
+    // Update vote button totals (existing)
     document.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
       var optId = btn.dataset.optionId;
       var totalEl = btn.querySelector('[data-role="total"]');
       if (totalEl) totalEl.textContent = 'Total: ' + (aggregateTotals[optId] || 0);
     });
+    // Instructor: update results panel bars and voter count
+    if (identity.role === 'instructor' && window._currentPollOptions) {
+      updateBars('results-bars', ev.totals);
+      if (ev.voterCount !== undefined) {
+        document.getElementById('results-voter-count').textContent =
+          ev.voterCount + ' participant' + (ev.voterCount !== 1 ? 's' : '') + ' responded';
+      }
+    }
+    // Participant: update participant-results-panel if visible
+    if (identity.role !== 'instructor' && window._currentPollOptions) {
+      updateBars('participant-results-bars', ev.totals);
+    }
   });
 
   // IMPL-05-8: poll closed state
@@ -403,7 +464,15 @@
     if (identity.role === 'instructor') {
       if (createPollBtn) createPollBtn.disabled = false;
       loadPollHistory();
+      // Freeze results panel with "Final results" heading
+      document.getElementById('results-heading').textContent = 'Final Results';
+      // Disable show-to-room button
+      var showBtn = document.getElementById('show-results-btn');
+      if (showBtn) showBtn.disabled = true;
     }
+    // Hide participant results panel
+    var participantPanel = document.getElementById('participant-results-panel');
+    if (participantPanel) participantPanel.style.display = 'none';
   });
 
   // ── Close poll (instructor) ───────────────────────────────────────────────
@@ -414,6 +483,40 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'closed' })
     }).catch(function () {});
+  });
+
+  // ── Show results to room toggle ───────────────────────────────────────────
+  var showResultsBtn = document.getElementById('show-results-btn');
+  if (showResultsBtn) {
+    showResultsBtn.addEventListener('click', function() {
+      window._showResultsToRoom = !window._showResultsToRoom;
+      showResultsBtn.textContent = 'Show to room: ' + (window._showResultsToRoom ? 'ON' : 'OFF');
+      socket.emit('poll:results-visibility', { visible: window._showResultsToRoom });
+    });
+  }
+
+  var projectorBtn = document.getElementById('projector-mode-btn');
+  if (projectorBtn) {
+    projectorBtn.addEventListener('click', function() {
+      document.body.classList.toggle('projector-mode');
+      projectorBtn.textContent = document.body.classList.contains('projector-mode')
+        ? 'Exit projector' : 'Projector mode';
+    });
+  }
+
+  // ── poll:results-visibility (participant view) ────────────────────────────
+  socket.on('poll:results-visibility', function(ev) {
+    var panel = document.getElementById('participant-results-panel');
+    if (!panel) return;
+    if (ev.visible) {
+      panel.style.display = 'block';
+      // Initialise bars if not yet done
+      if (window._currentPollOptions) {
+        renderBars('participant-results-bars', aggregateTotals, window._currentPollOptions);
+      }
+    } else {
+      panel.style.display = 'none';
+    }
   });
 
   // ── Poll history (instructor only) ────────────────────────────────────────

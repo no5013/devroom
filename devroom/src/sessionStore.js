@@ -124,6 +124,7 @@ function createPoll(sessionId, { question, options }) {
     options,
     status: 'active',
     results: {},
+    voters: new Set(),
     createdAt: Date.now()
   };
   session.polls.push(poll);
@@ -149,6 +150,8 @@ function closePoll(sessionId, pollId) {
   if (!session || !session.polls) return;
   const poll = session.polls.find(function(p) { return p.id === pollId; });
   if (poll) {
+    poll.finalResults = { ...poll.results };
+    poll.finalVoterCount = poll.voters.size;
     poll.status = 'closed';
     poll.closedAt = Date.now();
   }

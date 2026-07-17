@@ -12,7 +12,7 @@
 | US-03 — Create and Manage a Session | [plan-us-03-create-session.md](plan-us-03-create-session.md) | 8 | 7 | [x] Done |
 | US-04 — Instructor Creates a Poll Question | [plan-us-04-instructor-create-poll.md](plan-us-04-instructor-create-poll.md) | 9 | 7 | [x] Done |
 | US-05 — Participant Spams the Answer Button | [plan-us-05-participant-answer-poll.md](plan-us-05-participant-answer-poll.md) | 8 | 7 | [x] Done |
-| US-06 — View Live Poll Results | [plan-us-06-live-poll-results.md](plan-us-06-live-poll-results.md) | 7 | 7 | [ ] Not done |
+| US-06 — View Live Poll Results | [plan-us-06-live-poll-results.md](plan-us-06-live-poll-results.md) | 7 | 7 | [x] Done |
 
 **Total: 49 impl tasks · 41 QA tasks**
 
