@@ -279,6 +279,7 @@
     card.className = 'poll-card' + (frozen ? ' poll-card-frozen' : '');
     card.dataset.pollId = poll.id;
 
+    // ── Header ──
     var header = document.createElement('div');
     header.className = 'poll-card-header';
 
@@ -287,8 +288,33 @@
     badge.textContent = frozen ? '📊 Poll — Final Results' : '📊 Poll';
     header.appendChild(badge);
 
-    // Close button — only instructor, only active poll
+    if (!frozen) {
+      // Voter count
+      var voterCountEl = document.createElement('span');
+      voterCountEl.className = 'poll-voter-count';
+      voterCountEl.textContent = '0 responded';
+      header.appendChild(voterCountEl);
+    }
+
+    // Instructor controls
     if (!frozen && identity.role === 'instructor') {
+      var showToggle = document.createElement('button');
+      showToggle.className = 'poll-show-toggle';
+      showToggle.textContent = 'Show results: OFF';
+      showToggle.dataset.visible = 'false';
+      showToggle.addEventListener('click', function() {
+        var isVisible = showToggle.dataset.visible === 'true';
+        var nowVisible = !isVisible;
+        showToggle.dataset.visible = String(nowVisible);
+        showToggle.textContent = 'Show results: ' + (nowVisible ? 'ON' : 'OFF');
+        socket.emit('poll:results-visibility', { visible: nowVisible });
+        // Also show/hide bars on instructor's own card
+        card.querySelectorAll('.poll-bar-track').forEach(function(t) {
+          t.style.display = nowVisible ? 'block' : 'none';
+        });
+      });
+      header.appendChild(showToggle);
+
       var closeBtn = document.createElement('button');
       closeBtn.id = 'close-poll-btn-card';
       closeBtn.textContent = 'Close Poll ✕';
@@ -302,22 +328,26 @@
       });
       header.appendChild(closeBtn);
     }
-
     card.appendChild(header);
 
+    // ── Question ──
     var qEl = document.createElement('div');
     qEl.className = 'poll-card-question';
     qEl.textContent = poll.question;
     card.appendChild(qEl);
 
+    // ── Options ──
     var optionsEl = document.createElement('div');
     optionsEl.className = 'poll-card-options';
 
     poll.options.forEach(function(opt) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'poll-option-wrapper';
+
       var btn = document.createElement('button');
       btn.className = 'poll-vote-btn';
       btn.dataset.optionId = opt.id;
-      btn.disabled = true; // enabled in US-09
+      // Buttons ENABLED (US-09)
 
       var labelEl = document.createElement('span');
       labelEl.textContent = opt.label;
@@ -335,7 +365,46 @@
       btn.appendChild(labelEl);
       btn.appendChild(totalEl);
       btn.appendChild(personalEl);
-      optionsEl.appendChild(btn);
+
+      // ── Click-to-vote (disabled for frozen cards) ──
+      if (!frozen) {
+        btn.addEventListener('click', function() {
+          if (pollClosed || btn.disabled) return;
+          socket.emit('poll:vote', { pollId: poll.id, optionId: opt.id });
+
+          // Personal counter
+          personalCounts[opt.id] = (personalCounts[opt.id] || 0) + 1;
+          personalEl.textContent = 'You: ' + personalCounts[opt.id];
+
+          // Bounce animation
+          btn.classList.remove('bounce');
+          void btn.offsetWidth;
+          btn.classList.add('bounce');
+          btn.addEventListener('animationend', function onEnd() {
+            btn.classList.remove('bounce');
+            btn.removeEventListener('animationend', onEnd);
+          });
+        });
+      } else {
+        btn.disabled = true;
+      }
+
+      wrapper.appendChild(btn);
+
+      // ── Percentage bar (hidden for participants by default) ──
+      var barTrack = document.createElement('div');
+      barTrack.className = 'poll-bar-track';
+      // Participants don't see bars until instructor enables "Show results"
+      // Instructors always see bars
+      barTrack.style.display = (!frozen && identity.role !== 'instructor') ? 'none' : 'block';
+
+      var barFill = document.createElement('div');
+      barFill.className = 'poll-bar-fill';
+      barFill.style.width = '0%';
+      barTrack.appendChild(barFill);
+
+      wrapper.appendChild(barTrack);
+      optionsEl.appendChild(wrapper);
     });
 
     card.appendChild(optionsEl);
@@ -381,23 +450,33 @@
   socket.on('poll:results', function(ev) {
     if (!ev || ev.pollId !== currentPollId) return;
     aggregateTotals = ev.totals || {};
-    // Update vote button totals (existing)
-    document.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
+
+    // Find the active poll card
+    var card = document.querySelector('#poll-card-area .poll-card');
+    if (!card) return;
+
+    var totalVotes = Object.values(aggregateTotals).reduce(function(s, v) { return s + v; }, 0);
+
+    card.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
       var optId = btn.dataset.optionId;
+      var count = aggregateTotals[optId] || 0;
+      var pct = totalVotes > 0 ? Math.round(count / totalVotes * 100) : 0;
+
       var totalEl = btn.querySelector('[data-role="total"]');
-      if (totalEl) totalEl.textContent = 'Total: ' + (aggregateTotals[optId] || 0);
-    });
-    // Instructor: update results panel bars and voter count
-    if (identity.role === 'instructor' && window._currentPollOptions) {
-      updateBars('results-bars', ev.totals);
-      if (ev.voterCount !== undefined) {
-        document.getElementById('results-voter-count').textContent =
-          ev.voterCount + ' participant' + (ev.voterCount !== 1 ? 's' : '') + ' responded';
+      if (totalEl) totalEl.textContent = 'Total: ' + count;
+
+      // Update bar
+      var wrapper = btn.parentNode;
+      if (wrapper) {
+        var fill = wrapper.querySelector('.poll-bar-fill');
+        if (fill) fill.style.width = pct + '%';
       }
-    }
-    // Participant: update participant-results-panel if visible
-    if (identity.role !== 'instructor' && window._currentPollOptions) {
-      updateBars('participant-results-bars', ev.totals);
+    });
+
+    // Voter count
+    if (ev.voterCount !== undefined) {
+      var vcEl = card.querySelector('.poll-voter-count');
+      if (vcEl) vcEl.textContent = ev.voterCount + ' responded';
     }
   });
 
@@ -443,16 +522,26 @@
 
   // ── poll:results-visibility (participant view) ────────────────────────────
   socket.on('poll:results-visibility', function(ev) {
-    var panel = document.getElementById('participant-results-panel');
-    if (!panel) return;
-    if (ev.visible) {
-      panel.style.display = 'block';
-      // Initialise bars if not yet done
-      if (window._currentPollOptions) {
-        renderBars('participant-results-bars', aggregateTotals, window._currentPollOptions);
-      }
-    } else {
-      panel.style.display = 'none';
+    // Only applies to non-instructors — instructor always sees bars
+    if (identity.role === 'instructor') return;
+    var card = document.querySelector('#poll-card-area .poll-card');
+    if (!card) return;
+    card.querySelectorAll('.poll-bar-track').forEach(function(track) {
+      track.style.display = ev.visible ? 'block' : 'none';
+    });
+    // If showing, also update current values
+    if (ev.visible && window._currentPollOptions) {
+      var totalVotes = Object.values(aggregateTotals).reduce(function(s, v) { return s + v; }, 0);
+      card.querySelectorAll('.poll-vote-btn').forEach(function(btn) {
+        var optId = btn.dataset.optionId;
+        var count = aggregateTotals[optId] || 0;
+        var pct = totalVotes > 0 ? Math.round(count / totalVotes * 100) : 0;
+        var wrapper = btn.parentNode;
+        if (wrapper) {
+          var fill = wrapper.querySelector('.poll-bar-fill');
+          if (fill) fill.style.width = pct + '%';
+        }
+      });
     }
   });
 

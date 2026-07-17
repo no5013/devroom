@@ -16,7 +16,7 @@
 
 | US-07 — Create Poll via `/poll` Chat Command | [plan-us-07-poll-chat-command.md](plan-us-07-poll-chat-command.md) | 8 | 9 | [x] Done |
 | US-08 — Poll Renders as Inline Chat Bubble | [plan-us-08-poll-chat-bubble.md](plan-us-08-poll-chat-bubble.md) | 8 | 9 | [x] Done |
-| US-09 — Vote and See Live Results Inside Chat Bubble | _(pending)_ | — | — | [ ] Not done |
+| US-09 — Vote and See Live Results Inside Chat Bubble | [plan-us-09-vote-in-chat.md](plan-us-09-vote-in-chat.md) | 8 | 8 | [x] Done |
 | US-10 — Close Poll via Chat Command or In-Card Button | _(pending)_ | — | — | [ ] Not done |
 
 **Total: 57 impl tasks · 50 QA tasks (US-08–10 plans TBD)**

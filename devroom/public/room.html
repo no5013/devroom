@@ -543,6 +543,44 @@
       cursor: pointer;
       font-family: monospace;
     }
+
+    /* Poll option wrapper */
+    .poll-option-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-width: 120px;
+    }
+    /* Percentage bar */
+    .poll-bar-track {
+      background: #21262d;
+      border-radius: 3px;
+      height: 10px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .poll-bar-fill {
+      height: 100%;
+      background: #3fb950;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.15s ease;
+    }
+    /* Voter count */
+    .poll-voter-count {
+      font-size: 0.75rem;
+      color: #8b949e;
+    }
+    /* Show results toggle */
+    .poll-show-toggle {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      border: 1px solid #58a6ff;
+      color: #58a6ff;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -556,26 +594,6 @@
         <div id="participant-count">0 online</div>
         <button id="end-session-btn">End Session</button>
 
-        <!-- Live results panel — shown to instructor when poll is active -->
-        <div id="results-panel" style="display:none; margin-top:1rem; border-top:1px solid #30363d; padding-top:0.75rem;">
-          <div id="results-heading" style="color:#3fb950; font-size:0.85rem; margin-bottom:0.5rem;">Live Results</div>
-          <div id="results-voter-count" style="color:#8b949e; font-size:0.75rem; margin-bottom:0.5rem;">0 participants responded</div>
-          <div id="results-bars"></div>
-          <div style="display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap;">
-            <button id="show-results-btn" style="font-size:0.75rem; padding:0.3rem 0.6rem; border-color:#58a6ff; color:#58a6ff; background:transparent; border:1px solid; border-radius:4px; cursor:pointer; font-family:monospace;">
-              Show to room: OFF
-            </button>
-            <button id="projector-mode-btn" style="font-size:0.75rem; padding:0.3rem 0.6rem; border-color:#8b949e; color:#8b949e; background:transparent; border:1px solid; border-radius:4px; cursor:pointer; font-family:monospace;">
-              Projector mode
-            </button>
-          </div>
-        </div>
-
-        <!-- Participant results panel — shown when instructor enables "show to room" -->
-        <div id="participant-results-panel" style="display:none; padding:0.75rem; border-top:1px solid #30363d; margin-top:0.5rem;">
-          <div style="color:#3fb950; font-size:0.8rem; margin-bottom:0.5rem;">Poll Results</div>
-          <div id="participant-results-bars"></div>
-        </div>
       </div>
     </aside>
 
