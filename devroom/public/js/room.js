@@ -198,6 +198,10 @@
   function sendMessage() {
     var text = inputEl.value.trim();
     if (!text || sendBtn.disabled) return;
+    if (inputEl.value.trimStart().startsWith('/')) {
+      handleSlashCommand(inputEl.value.trim());
+      return;
+    }
     socket.emit('chat:send', { text: inputEl.value });
     // Confetti for sender on 🎉
     if (inputEl.value.includes('🎉')) {
@@ -567,6 +571,103 @@
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
+
+  // ── Chat system message helper ────────────────────────────────────────────
+  function showChatError(msg) {
+    var div = document.createElement('div');
+    div.className = 'chat-system-msg chat-error';
+    div.textContent = msg;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    setTimeout(function() { if (div.parentNode) div.parentNode.removeChild(div); }, 4000);
+  }
+
+  // ── Slash command parser ──────────────────────────────────────────────────
+  // Input: "/poll Is everyone ready? | Yes | No | Maybe"
+  // Returns: { question: "Is everyone ready?", options: ["Yes", "No", "Maybe"] }
+  // Returns null for bare "/poll" or "/poll close"
+  function parsePollCommand(text) {
+    var body = text.replace(/^\/poll\s*/i, '').trim();
+    if (!body || body.toLowerCase() === 'close') return null;
+    var parts = body.split('|').map(function(s) { return s.trim(); });
+    return { question: parts[0], options: parts.slice(1) };
+  }
+
+  // ── Slash command dispatcher ──────────────────────────────────────────────
+  function handleSlashCommand(text) {
+    var lower = text.toLowerCase();
+
+    // /poll close
+    if (lower === '/poll close') {
+      if (identity.role !== 'instructor') return;
+      if (!currentPollId) { showChatError('No active poll to close.'); return; }
+      fetch('/api/sessions/' + window._sessionId + '/polls/' + currentPollId + '?token=' + window._instructorToken, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'closed' })
+      }).catch(function() { showChatError('Failed to close poll.'); });
+      inputEl.value = '';
+      return;
+    }
+
+    // /poll (any other form)
+    if (lower.startsWith('/poll')) {
+      if (identity.role !== 'instructor') return; // silently ignore for participants
+
+      var parsed = parsePollCommand(text);
+
+      // Bare /poll — show usage
+      if (!parsed) {
+        var info = document.createElement('div');
+        info.className = 'chat-system-msg chat-info';
+        info.textContent = 'Usage: /poll Question? | Option1 | Option2 [| ...]';
+        messagesEl.appendChild(info);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        setTimeout(function() { if (info.parentNode) info.parentNode.removeChild(info); }, 5000);
+        return;
+      }
+
+      var question = parsed.question;
+      var options = parsed.options;
+
+      // Validate
+      if (!question) { showChatError('Poll question cannot be empty.'); return; }
+      if (options.length < 2) { showChatError('At least 2 options required (separate with |).'); return; }
+      if (options.length > 6) { showChatError('Maximum 6 options allowed.'); return; }
+      for (var i = 0; i < options.length; i++) {
+        if (options[i].length > 30) {
+          showChatError('Option "' + options[i].slice(0, 20) + '…" exceeds 30 characters.'); return;
+        }
+        if (!options[i]) { showChatError('Option labels cannot be empty.'); return; }
+      }
+
+      // Create via REST API
+      fetch('/api/sessions/' + window._sessionId + '/polls?token=' + window._instructorToken, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question, options: options })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          var msg = res.data.error || 'Failed to create poll';
+          if (res.data.error && res.data.error.includes('already active')) {
+            msg = 'A poll is already active — close it first with /poll close';
+          }
+          showChatError(msg);
+        } else {
+          // Success: clear input; poll:started socket event will render the poll
+          inputEl.value = '';
+          inputEl.style.height = 'auto';
+        }
+      })
+      .catch(function() { showChatError('Network error creating poll.'); });
+      return;
+    }
+
+    // Unknown command
+    showChatError('Unknown command: ' + text.split(' ')[0]);
+  }
 
   // Disable send initially until connected
   sendBtn.disabled = true;

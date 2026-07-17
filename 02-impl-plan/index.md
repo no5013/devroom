@@ -14,7 +14,12 @@
 | US-05 — Participant Spams the Answer Button | [plan-us-05-participant-answer-poll.md](plan-us-05-participant-answer-poll.md) | 8 | 7 | [x] Done |
 | US-06 — View Live Poll Results | [plan-us-06-live-poll-results.md](plan-us-06-live-poll-results.md) | 7 | 7 | [x] Done |
 
-**Total: 49 impl tasks · 41 QA tasks**
+| US-07 — Create Poll via `/poll` Chat Command | [plan-us-07-poll-chat-command.md](plan-us-07-poll-chat-command.md) | 8 | 9 | [x] Done |
+| US-08 — Poll Renders as Inline Chat Bubble | _(pending)_ | — | — | [ ] Not done |
+| US-09 — Vote and See Live Results Inside Chat Bubble | _(pending)_ | — | — | [ ] Not done |
+| US-10 — Close Poll via Chat Command or In-Card Button | _(pending)_ | — | — | [ ] Not done |
+
+**Total: 57 impl tasks · 50 QA tasks (US-08–10 plans TBD)**
 
 ## Legend
 

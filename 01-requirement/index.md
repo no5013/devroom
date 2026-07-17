@@ -13,6 +13,10 @@
 | US-04 | [Instructor Creates a Poll Question](us-04-instructor-create-poll.md) | [x] Done |
 | US-05 | [Participant Spams the Answer Button](us-05-participant-answer-poll.md) | [x] Done |
 | US-06 | [View Live Poll Results](us-06-live-poll-results.md) | [x] Done |
+| US-07 | [Create Poll via `/poll` Chat Command](us-07-poll-chat-command.md) | [x] Done |
+| US-08 | [Poll Renders as Inline Chat Bubble](us-08-poll-chat-bubble.md) | [ ] Not done |
+| US-09 | [Vote and See Live Results Inside the Chat Bubble](us-09-vote-in-chat.md) | [ ] Not done |
+| US-10 | [Close Poll via Chat Command or In-Card Button](us-10-close-poll-via-chat.md) | [ ] Not done |
 
 ## Legend
 
